@@ -1,39 +1,16 @@
-# 👷‍♀️🦀🕸️ `rustwasm-worker-template`
+# CF Worker Hanging Promise
 
-A template for kick starting a Cloudflare worker project using
-[`wasm-pack`](https://github.com/rustwasm/wasm-pack).
-
-This template is designed for compiling Rust libraries into WebAssembly and
-publishing the resulting worker to Cloudflare's worker infrastructure.
-
-## 🔋 Batteries Included
-
-* [`wasm-bindgen`](https://github.com/rustwasm/wasm-bindgen) for communicating
-  between WebAssembly and JavaScript.
-* [`console_error_panic_hook`](https://github.com/rustwasm/console_error_panic_hook)
-  for logging panic messages to the developer console.
-* [`wee_alloc`](https://github.com/rustwasm/wee_alloc), an allocator optimized
-  for small code size.
-
-## 🚴 Usage
-
-### 🐑 Use `wrangler generate` to Clone this Template
-
-[Learn more about `wrangler generate` here.](https://github.com/cloudflare/wrangler)
+This is a minimal test case for reproducing a hanging promise in a Cloudflare Worker. Sending multiple concurrent requests to the Rust Cloudflare Worker of this repo will lead to the following error:
 
 ```
-wrangler generate wasm-worker  https://github.com/cloudflare/rustwasm-worker-template.git
-cd wasm-worker
+HTTP/1.1 500 Internal Server Error
+A hanging Promise was canceled. This happens when the worker runtime is waiting for a Promise from JavaScript to resolve, but has detected that the Promise cannot possibly ever resolve because all code and events related to the Promise's request context have already finished.
+Uncaught (in response)
+Error: The script will never generate a response.
 ```
 
-### 🛠️ Build with `wasm-pack build`
+The error originally occurred while awaiting a Workers KV operation, but it seems to be reproducible with any JS promise that is awaited in Rust.
 
-```
-wasm-pack build
-```
+## How to Reproduce
 
-### 🔬 Test in Headless Browsers with `wasm-pack test`
-
-```
-wasm-pack test --headless --firefox
-```
+Change the `account_id` in `wrangler.toml`, then start the worker locally using `wrangler dev` or publish it to CF using `wrangler publish`. There are tests that call the worker in `tests/client.rs`, which should pass when run sequentially (using `cargo test -- --test-threads=1` for the published worker or `cargo test --features workers-localhost -- --test-threads=1` if the worker was started using `wrangler dev`), but will fail non-deterministically when run asynchronously (using `cargo test` or `cargo test --features workers-localhost`).
