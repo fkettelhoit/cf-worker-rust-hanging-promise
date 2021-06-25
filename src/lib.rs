@@ -17,6 +17,15 @@ cfg_if! {
 }
 
 #[wasm_bindgen]
-pub fn greet() -> String {
-    "Hello, wasm-worker!".to_string()
+pub async fn handle(obj: ObjectWithAsyncMethod) -> Result<String, JsValue> {
+    obj.run().await?;
+    Ok("Hello, Async!".to_string())
+}
+
+#[wasm_bindgen]
+extern "C" {
+    pub type ObjectWithAsyncMethod;
+
+    #[wasm_bindgen(structural, method, catch)]
+    pub async fn run(this: &ObjectWithAsyncMethod) -> Result<JsValue, JsValue>;
 }
