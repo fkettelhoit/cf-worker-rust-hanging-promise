@@ -1,5 +1,7 @@
 # CF Worker Hanging Promise
 
+**As of 2021/08/06 this issue has been fixed, see [this post](https://community.cloudflare.com/t/a-hanging-promise-was-canceled-rust-wasm-worker/282471/8) for more information. The test in this repository now passes, even when the calls to the Rust worker are made in parallel.**
+
 This is a minimal test case for reproducing a hanging promise in a Cloudflare Worker. Sending multiple concurrent requests to the Rust Cloudflare Worker of this repo will lead to the following error:
 
 ```
